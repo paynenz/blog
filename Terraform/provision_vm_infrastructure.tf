@@ -15,7 +15,7 @@ resource "azurerm_subnet" "snet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.1.1.0/24"]
-  service_endpoints    = ["Microsoft.KeyVault"]
+  service_endpoints    = ["Microsoft.KeyVault", "Microsoft.Storage"]
 }
 
 resource "azurerm_network_security_group" "nsg" {
@@ -83,4 +83,18 @@ resource "azurerm_network_interface" "nic" {
 resource "azurerm_network_interface_security_group_association" "nic-assoc" {
   network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
+}
+
+resource "azurerm_storage_container" "sc" {
+  name                  = "octopusstoragecontainer"
+  storage_account_name  = local.storage_account_name
+  container_access_type = "private"
+}
+
+resource "azurerm_storage_blob" "install-script" {
+  name                   = "install_octopus.ps1"
+  storage_account_name   = local.storage_account_name
+  storage_container_name = azurerm_storage_container.sc.name
+  type                   = "Block"
+  source                 = "install_octopus.ps1"
 }

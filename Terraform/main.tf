@@ -38,7 +38,7 @@ resource "azurerm_windows_virtual_machine" "vm" {
 
   identity {
     type = "UserAssigned"
-    identity_ids = [ "/subscriptions/14de0224-a80e-4f73-93c7-8579b9012d60/resourceGroups/rg-paynenz-001/providers/Microsoft.ManagedIdentity/userAssignedIdentities/mi-octopus-001" ]
+    identity_ids = [ local.identity_id ]
   }
 }
 
@@ -51,7 +51,11 @@ resource "azurerm_virtual_machine_extension" "install-octopus" {
 
   protected_settings = <<SETTINGS
   {
-     "commandToExecute": "powershell -encodedCommand ${textencodebase64(file("install_octopus.ps1"), "UTF-16LE")}"
+     "commandToExecute": "powershell -encodedCommand ${textencodebase64(file("bootstrap.ps1"), "UTF-16LE")}"
   }
   SETTINGS
+
+  depends_on = [
+    azurerm_storage_blob.install-script
+  ]
 }
