@@ -10,11 +10,20 @@ function Install-Cert {
         [switch] $GrantAccessToService
     )
 
+    function Get-KeyUniqueName($cert) {
+        return $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
+   }
+   
+   function Get-KeyFilePath($cert) {             
+        return "$ENV:ProgramData\Microsoft\Crypto\RSA\MachineKeys\$(Get-KeyUniqueName($cert))"
+   }
+
     [Reflection.Assembly]::Load("System.Security, Version=2.0.0.0, Culture=Neutral, PublicKeyToken=b03f5f7f11d50a3a")
 
-    $flags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::MachineKeySet -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::PersistKeySet
+    $keyFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::MachineKeySet 
+    $keyFlags = $keyFlags -bor [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::PersistKeySet
 
-    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertData, '', $flags)
+    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertData, '', $keyFlags)
 
     $store = New-Object System.Security.Cryptography.X509Certificates.X509Store($StoreName, [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
 
@@ -25,10 +34,9 @@ function Install-Cert {
     $store.Close();
 
     if ($GrantAccessToService.IsPresent) {
-        $localSystemAccountSidString = 'S-1-5-18'
-        $sid = New-Object System.Security.Principal.SecurityIdentifier($localSystemAccountSidString)
-        $pkUniqueName = ([System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)).key.UniqueName
-        $pkFile = Get-Item "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys\$pkUniqueName"
+        $administratorsGroupSidString = 'S-1-5-32-544'
+        $sid = New-Object System.Security.Principal.SecurityIdentifier($administratorsGroupSidString)        
+        $pkFile = Get-Item(Get-KeyFilePath($certFromStore))
         $pkAcl = Get-Acl $pkFile
         $pkAcl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($sid, "Read", "Allow")))
         Set-Acl $pkFile.FullName $pkAcl
