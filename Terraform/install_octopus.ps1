@@ -16,6 +16,7 @@ $octopusLicenseKey = Get-AzKeyVaultSecret -VaultName $vaultName -Name 'octopus-l
 $octopusConfigFilePath = "C:\Octopus\OctopusServer.config"
 $octopusInstanceName = "OctopusServer"
 $octopusServerName = "vm-octopus-001"
+$sslCertThumbprint = 'D6BEDDBAC5EDAE93E72FD682D4B0831CA199065E'
 
 & $octopusServerFilePath create-instance --instance "$octopusInstanceName" --config "$octopusConfigFilePath" --serverNodeName "$octopusServerName"
 & $octopusServerFilePath database --instance "$octopusInstanceName" --connectionString "Data Source=sql-paynenz-001.database.windows.net;Initial Catalog=sqldb-octopus-001;Integrated Security=False;User ID=chief;Password=$sqlConnectionPassword;Trust Server Certificate=True" --create --upgrade
