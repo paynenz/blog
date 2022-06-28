@@ -55,7 +55,7 @@ resource "azurerm_virtual_machine_extension" "install-ssl-certs" {
       "pollingIntervalInS": "3600",
       "certificateStoreName": "MY",
       "certificateStoreLocation": "LocalMachine",
-      "observedCertificates": ["https://keyvault-paynenz.vault.azure.net/certificates/cert-octopus-001-ssl"]
+      "observedCertificates": ["https://keyvault-paynenz.vault.azure.net/secrets/cert-octopus-001-ssl"]
     }
   }
   SETTINGS  
