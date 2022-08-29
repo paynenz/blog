@@ -1,15 +1,15 @@
-ARG Version
+ARG VERSION
 
 FROM nginx:alpine AS base
 EXPOSE 80
 EXPOSE 443
 
 FROM node:16.14-alpine AS build
-ARG Version
+ARG VERSION
 WORKDIR /src
 RUN apk add chromium
 COPY package*.json /src
-npm version $Version
+RUN npm version $VERSION
 RUN npm ci
 COPY . /src
 RUN npm run build --prod

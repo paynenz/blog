@@ -60,7 +60,8 @@ jobs:
       with:
         context: ./src/Backend
         file: ./src/Backend/BlogBackend/Dockerfile
-        build-args: Version=${{ steps.sem-version.outputs.version }}
+        build-args: |
+          VERSION=${{ steps.sem-version.outputs.version }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -103,7 +104,8 @@ jobs:
       with:
         context: ./src/Frontend/BlogFrontend
         file: ./src/Frontend/BlogFrontend/Dockerfile
-        build-args: Version=${{ steps.sem-version.outputs.version }}
+        build-args: |
+          VERSION=${{ steps.sem-version.outputs.version }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
