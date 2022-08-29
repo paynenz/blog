@@ -15,7 +15,7 @@ COPY ["Tests/BlogBackendUnitTests/BlogBackendUnitTests.csproj", "Tests/BlogBacke
 RUN dotnet restore "Tests/BlogBackendUnitTests/BlogBackendUnitTests.csproj"
 COPY . .
 WORKDIR "/src"
-RUN dotnet build "BlogBackend/BlogBackend.csproj" -c Release /property:Version=$env:VERSION
+RUN dotnet build "BlogBackend/BlogBackend.csproj" -c Release /property:Version=$VERSION
 RUN dotnet build "Tests/BlogBackendUnitTests/BlogBackendUnitTests.csproj" -c Release
 
 FROM build AS test
@@ -23,7 +23,7 @@ RUN dotnet test "Tests/BlogBackendUnitTests/BlogBackendUnitTests.csproj" -c Rele
 
 FROM build AS publish
 ARG VERSION
-RUN dotnet publish "BlogBackend/BlogBackend.csproj" -c Release /property:Version=$env:VERSION -o /app/publish
+RUN dotnet publish "BlogBackend/BlogBackend.csproj" -c Release /property:Version=$VERSION -o /app/publish
 
 FROM base AS final
 WORKDIR /app
