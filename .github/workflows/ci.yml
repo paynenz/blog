@@ -21,6 +21,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -35,12 +37,16 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Application Version
+      id: sem-version
+      uses: paulhatch/semantic-version@v4.0.2
+
     - name: Extract metadata (tags, labels) for Docker
       id: meta
       uses: docker/metadata-action@v3
       with:
         images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}
-        tags: type=semver,pattern={{version}}
+        tags: ${{ steps.sem-version.outputs.version }}
 
     - name: Build and Test
       uses: docker/build-push-action@v3
@@ -54,6 +60,7 @@ jobs:
       with:
         context: ./src/Backend
         file: ./src/Backend/BlogBackend/Dockerfile
+        build-args: Version=${{ steps.sem-version.outputs.version }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -82,7 +89,7 @@ jobs:
       uses: docker/metadata-action@v3
       with:
         images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}
-        tags: type=semver,pattern={{version}}
+        tags: ${{ steps.sem-version.outputs.version }}
 
     - name: Build and Test
       uses: docker/build-push-action@v3
@@ -96,6 +103,7 @@ jobs:
       with:
         context: ./src/Frontend/BlogFrontend
         file: ./src/Frontend/BlogFrontend/Dockerfile
+        build-args: Version=${{ steps.sem-version.outputs.version }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
