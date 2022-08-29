@@ -97,6 +97,8 @@ jobs:
       with:
         context: ./src/Frontend/BlogFrontend
         file: ./src/Frontend/BlogFrontend/Dockerfile
+        build-args: |
+          VERSION=${{ steps.sem-version.outputs.version }}
         target: test
 
     - name: Publish and Push
