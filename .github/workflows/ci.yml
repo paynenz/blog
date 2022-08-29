@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - 'main'
+    tags:
+      - 'v*.*.*'
   pull_request:
-    branches: [ main ]
+    branches:
+      - 'main'
 
 env:
   REGISTRY: ghcr.io
@@ -36,16 +40,17 @@ jobs:
       uses: docker/metadata-action@v3
       with:
         images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}
+        tags: type=semver,pattern={{version}}
 
     - name: Build and Test
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ./src/Backend
         file: ./src/Backend/BlogBackend/Dockerfile
         target: test
 
     - name: Publish and Push
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ./src/Backend
         file: ./src/Backend/BlogBackend/Dockerfile
@@ -77,16 +82,17 @@ jobs:
       uses: docker/metadata-action@v3
       with:
         images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}
+        tags: type=semver,pattern={{version}}
 
     - name: Build and Test
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ./src/Frontend/BlogFrontend
         file: ./src/Frontend/BlogFrontend/Dockerfile
         target: test
 
     - name: Publish and Push
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ./src/Frontend/BlogFrontend
         file: ./src/Frontend/BlogFrontend/Dockerfile
