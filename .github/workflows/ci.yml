@@ -53,6 +53,8 @@ jobs:
       with:
         context: ./src/Backend
         file: ./src/Backend/BlogBackend/Dockerfile
+        build-args: |
+          VERSION=${{ steps.sem-version.outputs.version }}
         target: test
 
     - name: Publish and Push
@@ -84,6 +86,10 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Application Version
+      id: sem-version
+      uses: paulhatch/semantic-version@v4.0.2
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
