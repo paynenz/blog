@@ -27,7 +27,7 @@ jobs:
     - name: Determine pre-release
       id: is-prerelease
       run: |
-        if [${{ github.ref }} = 'refs/heads/main'] && [${{ github.event_name }} = 'push']; then
+        if [ '${{ github.ref }}' = 'refs/heads/main' ] && [ '${{ github.event_name }}' = 'push' ]; then
           echo "::set-output name=value::false"
         else
           echo "::set-output name=value::true"
