@@ -165,4 +165,4 @@ jobs:
         server: ${{ secrets.OCTOPUS_SERVER_URL }}
         project: 'Blog'
         package_version: ${{ needs.generate-version.outputs.tag }}
-        git_ref: ${{ github.ref }}
+        git_ref: ${{ github.head_ref || github.ref_name }}
