@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - 'main'
+    tags:
+      - 'v*.*.*'
   pull_request:
-    branches: [ main ]
+    branches:
+      - 'main'
 
 env:
   REGISTRY: ghcr.io
@@ -12,11 +16,46 @@ env:
   BACKEND_IMAGE_NAME: ${{ github.repository_owner }}/blogbackend
 
 jobs:
+  generate-version:
+    runs-on: ubuntu-latest    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Determine pre-release
+      id: is-prerelease
+      run: |
+        if [${{github.ref}} = 'refs/heads/main'] && [${{github.event_name}} != 'pull_request']; then
+          echo "::set-output name=value::false"
+        else
+          echo "::set-output name=value::true"
+        fi
+
+    - name: Generate semantic version
+      id: sem-version
+      uses: paulhatch/semantic-version@v4.0.2
+
+    - name: Generate package tag
+      id: package-tag
+      run: |
+        if ${{ steps.is-prerelease.outputs.value }} == true; then
+          echo "::set-output name=tag::${{ steps.sem-version.outputs.version }}-pre-$(git rev-parse --short HEAD)"                          
+        else
+          echo "::set-output name=tag::${{ steps.sem-version.outputs.version }}-$(git rev-parse --short HEAD)"
+        fi
+
+    outputs:
+      version: ${{ steps.sem-version.outputs.version }}
+      tag: ${{ steps.package-tag.outputs.tag }}
+
   build-backend:
     runs-on: ubuntu-latest
-    
+    needs: generate-version
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -29,35 +68,44 @@ jobs:
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ secrets.GITHUB_TOKEN }}    
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
       uses: docker/metadata-action@v3
       with:
         images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}
+        tags: ${{ needs.generate-version.outputs.tag }}
 
     - name: Build and Test
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ./src/Backend
         file: ./src/Backend/BlogBackend/Dockerfile
+        build-args: |
+          VERSION=${{ needs.generate-version.outputs.version }}
+          TAG=${{ needs.generate-version.outputs.tag }}
         target: test
 
     - name: Publish and Push
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ./src/Backend
         file: ./src/Backend/BlogBackend/Dockerfile
+        platforms: linux/arm64
+        build-args: |
+          VERSION=${{ needs.generate-version.outputs.version }}
+          TAG=${{ needs.generate-version.outputs.tag }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
   build-frontend:
     runs-on: ubuntu-latest
-    
+    needs: generate-version
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -70,26 +118,51 @@ jobs:
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ secrets.GITHUB_TOKEN }}    
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
       uses: docker/metadata-action@v3
       with:
         images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}
+        tags: ${{ needs.generate-version.outputs.tag }}
 
     - name: Build and Test
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ./src/Frontend/BlogFrontend
         file: ./src/Frontend/BlogFrontend/Dockerfile
+        build-args: |
+          VERSION=${{ needs.generate-version.outputs.version }}
         target: test
 
     - name: Publish and Push
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ./src/Frontend/BlogFrontend
         file: ./src/Frontend/BlogFrontend/Dockerfile
+        platforms: linux/arm64
+        build-args: |
+          VERSION=${{ needs.generate-version.outputs.version }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: [generate-version, build-backend, build-frontend]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install Octopus CLI
+      uses: OctopusDeploy/install-octopus-cli-action@v1.2.0
+      with:
+        version: latest
+
+    - name: Create release in Octopus Deploy
+      uses: OctopusDeploy/create-release-action@v2.0.1      
+      with:
+        api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
+        server: ${{ secrets.OCTOPUS_SERVER_URL }}
+        project: 'Blog'
+        package_version: ${{ needs.generate-version.outputs.tag }}
+        git_ref: ${{ github.head_ref || github.ref_name }}

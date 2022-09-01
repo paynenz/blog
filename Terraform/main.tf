@@ -42,6 +42,25 @@ resource "azurerm_windows_virtual_machine" "vm" {
   }
 }
 
+resource "azurerm_virtual_machine_extension" "install-ssl-certs" {
+  name                 = "install-ssl-cert"
+  virtual_machine_id   = azurerm_windows_virtual_machine.vm.id
+  publisher            = "Microsoft.Azure.KeyVault"
+  type                 = "KeyVaultForWindows"
+  type_handler_version = "1.0"
+
+  settings = <<SETTINGS
+  {
+    "secretsManagementSettings": {
+      "pollingIntervalInS": "3600",
+      "certificateStoreName": "MY",
+      "certificateStoreLocation": "LocalMachine",
+      "observedCertificates": ["https://keyvault-paynenz.vault.azure.net/secrets/cert-octopus-001-ssl"]
+    }
+  }
+  SETTINGS  
+}
+
 resource "azurerm_virtual_machine_extension" "install-octopus" {
   name                 = "install-octopus"
   virtual_machine_id   = azurerm_windows_virtual_machine.vm.id
