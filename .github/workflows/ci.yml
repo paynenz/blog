@@ -27,7 +27,7 @@ jobs:
     - name: Determine pre-release
       id: is-prerelease
       run: |
-        if [${{github.ref}} = 'refs/heads/main'] && [${{github.event_name}} != 'pull_request']; then
+        if [${{ github.ref }} = 'refs/heads/main'] && [${{ github.event_name }} = 'push']; then
           echo "::set-output name=value::false"
         else
           echo "::set-output name=value::true"
@@ -40,7 +40,7 @@ jobs:
     - name: Generate package tag
       id: package-tag
       run: |
-        if ${{ steps.is-prerelease.outputs.value }} == true; then
+        if ${{ steps.is-prerelease.outputs.value }} = true; then
           echo "::set-output name=tag::${{ steps.sem-version.outputs.version }}-pre-$(git rev-parse --short HEAD)"                          
         else
           echo "::set-output name=tag::${{ steps.sem-version.outputs.version }}-$(git rev-parse --short HEAD)"
